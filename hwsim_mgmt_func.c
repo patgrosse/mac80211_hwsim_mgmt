@@ -11,35 +11,35 @@ int init_netlink(netlink_ctx *ctx) {
     ctx->cb = nl_cb_alloc(NL_CB_CUSTOM);
     if (!ctx->cb) {
         fprintf(stderr, "Error allocating netlink callbacks\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 
     ctx->sock = nl_socket_alloc_cb(ctx->cb);
     if (!ctx->sock) {
         fprintf(stderr, "Error allocating netlink socket\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 
     ret = genl_connect(ctx->sock);
     if (ret < 0) {
         fprintf(stderr, "Error connecting netlink socket ret=%d\n", ret);
-        return -1;
+        return EXIT_FAILURE;
     }
 
     ret = genl_ctrl_alloc_cache(ctx->sock, &ctx->cache);
     if (ret < 0) {
         fprintf(stderr, "Error allocationg netlink cache ret=%d\n", ret);
-        return -1;
+        return EXIT_FAILURE;
     }
 
     ctx->family = genl_ctrl_search_by_name(ctx->cache, "MAC80211_HWSIM");
 
     if (!ctx->family) {
         fprintf(stderr, "Family MAC80211_HWSIM not registered\n");
-        return -1;
+        return EXIT_FAILURE;
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int create_radio(const netlink_ctx *ctx, const uint32_t channels, const bool no_vif, const char *hwname,
@@ -49,7 +49,7 @@ int create_radio(const netlink_ctx *ctx, const uint32_t channels, const bool no_
     msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Error allocating new message!\n");
-        return -1;
+        return EXIT_FAILURE;
     }
     int fam_id = genl_family_get_id(ctx->family);
     if (genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ,
@@ -58,7 +58,7 @@ int create_radio(const netlink_ctx *ctx, const uint32_t channels, const bool no_
                     1) == NULL) {
         fprintf(stderr, "Error in genlmsg_put!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
     if (channels != 0) {
         nla_put_u32(msg, HWSIM_ATTR_CHANNELS, channels);
@@ -81,9 +81,9 @@ int create_radio(const netlink_ctx *ctx, const uint32_t channels, const bool no_
     if (nl_send_auto(ctx->sock, msg) < 0) {
         fprintf(stderr, "Error sending message!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int delete_radio_by_id(const netlink_ctx *ctx, const uint32_t radio_id) {
@@ -91,7 +91,7 @@ int delete_radio_by_id(const netlink_ctx *ctx, const uint32_t radio_id) {
     msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Error allocating new message!\n");
-        return -1;
+        return EXIT_FAILURE;
     }
     if (genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ,
                     genl_family_get_id(ctx->family), 0,
@@ -99,15 +99,15 @@ int delete_radio_by_id(const netlink_ctx *ctx, const uint32_t radio_id) {
                     1) == NULL) {
         fprintf(stderr, "Error in genlmsg_put!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
     nla_put_u32(msg, HWSIM_ATTR_RADIO_ID, radio_id);
     if (nl_send_auto(ctx->sock, msg) < 0) {
         fprintf(stderr, "Error sending message!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 int delete_radio_by_name(const netlink_ctx *ctx, const char *radio_name) {
@@ -115,7 +115,7 @@ int delete_radio_by_name(const netlink_ctx *ctx, const char *radio_name) {
     msg = nlmsg_alloc();
     if (!msg) {
         fprintf(stderr, "Error allocating new message!\n");
-        return -1;
+        return EXIT_FAILURE;
     }
     if (genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ,
                     genl_family_get_id(ctx->family), 0,
@@ -123,14 +123,14 @@ int delete_radio_by_name(const netlink_ctx *ctx, const char *radio_name) {
                     1) == NULL) {
         fprintf(stderr, "Error in genlmsg_put!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
     nla_put_string(msg, HWSIM_ATTR_RADIO_NAME, radio_name);
     if (nl_send_auto(ctx->sock, msg) < 0) {
         fprintf(stderr, "Error sending message!\n");
         nlmsg_free(msg);
-        return -1;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 
 }

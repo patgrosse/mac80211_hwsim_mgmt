@@ -2,6 +2,8 @@
 #define MAC80211_HWSIM_MGMT_HWSIM_MGMT_H
 
 #include <stdbool.h>
+#include <argp.h>
+#include "hwsim_mgmt_func.h"
 
 enum op_mode {
     HWSIM_OP_NONE,
@@ -9,7 +11,7 @@ enum op_mode {
     HWSIM_OP_DELETE
 };
 
-struct arguments {
+typedef struct {
     enum op_mode mode;
     char *hwname;
     uint32_t c_channels;
@@ -19,12 +21,16 @@ struct arguments {
     uint32_t c_reg_custom_reg;
     uint32_t del_radio_id;
     bool del_ref_found;
-};
+} hwsim_args;
 
-struct argp hwsim_argp;
+typedef struct {
+    struct argp hwsim_argp;
+    hwsim_args args;
+    netlink_ctx nl_ctx;
+} hwsim_cli_ctx;
 
-int handleCreate(const struct arguments *args);
+int handleCreate(const hwsim_args *args);
 
-int handleDelete(const struct arguments *args);
+int handleDelete(const hwsim_args *args);
 
 #endif //MAC80211_HWSIM_MGMT_HWSIM_MGMT_H

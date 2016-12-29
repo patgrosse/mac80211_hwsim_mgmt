@@ -9,7 +9,7 @@ NL31FOUND := $(shell $(PKG_CONFIG) --exact-version=3.1 libnl-3.1 && echo Y)
 NL3xFOUND := $(shell $(PKG_CONFIG) --atleast-version=3.2 libnl-3.0 && echo Y)
 
 CFLAGS = -g -Wall -Wextra -O2
-LDFLAGS =
+LDFLAGS = -lpthread -levent
 
 ifeq ($(NL2FOUND),Y)
 CFLAGS += -DCONFIG_LIBNL20
@@ -46,7 +46,7 @@ endif
 LDFLAGS += $(shell $(PKG_CONFIG) --libs $(NLLIBNAME))
 CFLAGS += $(shell $(PKG_CONFIG) --cflags $(NLLIBNAME))
 
-OBJECTS=hwsim_mgmt_cli.o hwsim_mgmt_func.o
+OBJECTS=hwsim_mgmt_cli.o hwsim_mgmt_func.o hwsim_mgmt_event.o
 
 all: hwsim_mgmt
 
