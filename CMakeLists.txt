@@ -17,7 +17,6 @@ add_executable(mac80211_hwsim_mgmt ${SOURCE_FILES})
 
 # link required libraries
 target_link_libraries(mac80211_hwsim_mgmt ${M_LIB})
-target_link_libraries(mac80211_hwsim_mgmt ${LIBCONFIG_LIBRARIES})
 target_link_libraries(mac80211_hwsim_mgmt ${NL_LIBRARIES})
 target_link_libraries(mac80211_hwsim_mgmt ${LIBEVENT_LIB})
 target_link_libraries(mac80211_hwsim_mgmt ${CMAKE_THREAD_LIBS_INIT})
