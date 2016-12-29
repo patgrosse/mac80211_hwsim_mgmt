@@ -16,7 +16,7 @@ struct argp_option options[] = {
         {"name",   'n', "NAME", 0, "The name of the radio to delete", 3},
         {"id",     'i', "ID",   0, "The id of the radio to delete",   3},
         {0,        0,   0,      0, "General:",                        -1},
-        {0}
+        {0,        0,   0,      0, 0,                                 0}
 };
 
 void argp_err_and_usage(const char *err_msg) {
