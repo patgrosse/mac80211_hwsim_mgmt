@@ -95,7 +95,7 @@ int handleCreate(const hwsim_args *args) {
                             args->c_reg_custom_reg))) {
         return ret;
     }
-    return wait_for_event(&ctx);
+    return wait_for_event();
 }
 
 int handleDelete(const hwsim_args *args) {
@@ -117,7 +117,7 @@ int handleDelete(const hwsim_args *args) {
             return ret;
         }
     }
-    return wait_for_event(&ctx);
+    return wait_for_event();
 }
 
 int main(int argc, char **argv) {

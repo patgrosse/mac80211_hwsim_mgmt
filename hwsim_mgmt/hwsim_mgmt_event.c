@@ -88,7 +88,7 @@ int register_event(hwsim_cli_ctx *ctx) {
     return pthread_create(&libe_thread, NULL, run_nl_event_dispatcher, ctx);
 }
 
-int wait_for_event(hwsim_cli_ctx *ctx) {
+int wait_for_event() {
     struct timespec halfsecond = {0, 500000000};
     nanosleep(&halfsecond, NULL);
     fprintf(stderr, "Did not receive netlink event after 500 msec\n");
