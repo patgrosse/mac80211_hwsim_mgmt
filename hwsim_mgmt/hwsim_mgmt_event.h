@@ -7,6 +7,6 @@
 
 int register_event(hwsim_cli_ctx *ctx);
 
-int wait_for_event(hwsim_cli_ctx *ctx);
+int wait_for_event();
 
 #endif //MAC80211_HWSIM_MGMT_HWSIM_MGMT_EVENT_H
