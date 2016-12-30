@@ -1,5 +1,7 @@
-hwsim_mgmt
+### Executable
+hwsim_mgmt/hwsim_mgmt
 
+### Jetbrains
 .idea
 
 ### CMake template
