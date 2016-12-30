@@ -13,15 +13,14 @@ const char *argp_program_bug_address = "<patrick.grosse@uni-muenster.de>";
 char *program_executable = "hwsim_mgmt";
 const char doc[] = "Management tool for mac80211_hwsim kernel module";
 struct argp_option options[] = {
-        {0,        0,   0,      0, "Modes: [-c|-d]",                  1},
-        {"create", 'c', 0,      0, "Create a new radio",              1},
-        {"delete", 'd', 0,      0, "Delete an existing radio",        1},
-        {0,        0,   0,      0, "Create options:",                 2},
-        {0,        0,   0,      0, "Delete options: [-i|-n]",         3},
-        {"name",   'n', "NAME", 0, "The name of the radio to delete", 3},
-        {"id",     'i', "ID",   0, "The id of the radio to delete",   3},
-        {0,        0,   0,      0, "General:",                        -1},
-        {0,        0,   0,      0, 0,                                 0}
+        {0,         0,   0,      0, "Modes: [-c|-d|-x]",                         1},
+        {"create",  'c', 0,      0, "Create a new radio",                        1},
+        {"delid",   'd', "ID",   0, "Delete an existing radio by its id",        1},
+        {"delname", 'x', "NAME", 0, "Delete an existing radio by its name",      1},
+        {0,         0,   0,      0, "Create options: [-n]",                      2},
+        {"name",    'n', "NAME", 0, "The requested name (may not be available)", 2},
+        {0,         0,   0,      0, "General:",                                  -1},
+        {0,         0,   0,      0, 0,                                           0}
 };
 
 static hwsim_cli_ctx ctx;
@@ -37,33 +36,30 @@ error_t hwsim_parse_argp(int key, char *arg, struct argp_state *state) {
     switch (key) {
         case 'd':
             if (arguments->mode != HWSIM_OP_NONE) {
-                argp_err_and_usage("Only one parameter out of -d and -c is allowed");
+                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
             }
-            arguments->mode = HWSIM_OP_DELETE;
-            break;
-        case 'n':
-            if (arguments->del_ref_found) {
-                argp_err_and_usage("Only one parameter out of -n and -i is allowed");
-            }
-            arguments->hwname = arg;
-            arguments->del_ref_found = true;
-            break;
-        case 'i':
-            if (arguments->del_ref_found) {
-                argp_err_and_usage("Only one parameter out of -n and -i is allowed");
-            }
+            arguments->mode = HWSIM_OP_DELETE_BY_ID;
             char *endptr = NULL;
             unsigned long ul = strtoul(arg, &endptr, 10);
             unsigned long parsed_len = endptr - arg;
             if (strlen(arg) != parsed_len || (ul == ULONG_MAX && errno == ERANGE) || ul > UINT32_MAX) {
-                argp_err_and_usage("-i requires a positive integer attribute (max 32 bit)");
+                argp_err_and_usage("-x requires a positive integer attribute (max 32 bit)");
             }
             arguments->del_radio_id = (uint32_t) ul;
-            arguments->del_ref_found = true;
+            break;
+        case 'x':
+            if (arguments->mode != HWSIM_OP_NONE) {
+                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
+            }
+            arguments->del_radio_name = arg;
+            arguments->mode = HWSIM_OP_DELETE_BY_NAME;
+            break;
+        case 'n':
+            arguments->c_hwname = arg;
             break;
         case 'c':
             if (arguments->mode != HWSIM_OP_NONE) {
-                argp_err_and_usage("Only one parameter out of -d and -c is allowed");
+                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
             }
             arguments->mode = HWSIM_OP_CREATE;
             break;
@@ -95,7 +91,7 @@ int handleCreate(const hwsim_args *args) {
     if ((ret = prepareCommand())) {
         return ret;
     };
-    if ((ret = create_radio(&ctx.nl_ctx, args->c_channels, args->c_no_vif, args->hwname, args->c_use_chanctx,
+    if ((ret = create_radio(&ctx.nl_ctx, args->c_channels, args->c_no_vif, args->c_hwname, args->c_use_chanctx,
                             args->c_reg_alpha2,
                             args->c_reg_custom_reg))) {
         return ret;
@@ -103,39 +99,55 @@ int handleCreate(const hwsim_args *args) {
     return wait_for_event();
 }
 
-int handleDelete(const hwsim_args *args) {
-    if (!args->del_ref_found) {
-        argp_err_and_usage("Exactly one of -d or -c is required");
-    }
+int handleDeleteById(const hwsim_args *args) {
     int ret;
     if ((ret = prepareCommand())) {
         return ret;
     };
-    if (args->hwname) {
-        printf("Deleting radio with name '%s'...\n", args->hwname);
-        if ((ret = delete_radio_by_name(&ctx.nl_ctx, args->hwname))) {
-            return ret;
-        }
-    } else {
-        printf("Deleting radio with id '%d'...\n", args->del_radio_id);
-        if ((ret = delete_radio_by_id(&ctx.nl_ctx, args->del_radio_id))) {
-            return ret;
-        }
+    printf("Deleting radio with id '%d'...\n", args->del_radio_id);
+    if ((ret = delete_radio_by_id(&ctx.nl_ctx, args->del_radio_id))) {
+        return ret;
     }
     return wait_for_event();
+}
+
+int handleDeleteByName(const hwsim_args *args) {
+    int ret;
+    if ((ret = prepareCommand())) {
+        return ret;
+    };
+    printf("Deleting radio with name '%s'...\n", args->del_radio_name);
+    if ((ret = delete_radio_by_name(&ctx.nl_ctx, args->del_radio_name))) {
+        return ret;
+    }
+    return wait_for_event();
+}
+
+void notify_device_creation(int id) {
+    printf("Created device with ID %d\n", id);
+    exit(EXIT_SUCCESS);
+}
+
+void notify_device_deletion() {
+    if (ctx.args.mode == HWSIM_OP_DELETE_BY_ID) {
+        printf("Successfully deleted device with ID %d\n", ctx.args.del_radio_id);
+    } else {
+        printf("Successfully deleted device with name '%s'\n", ctx.args.del_radio_name);
+    }
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv) {
     hwsim_args args = {
             .mode = HWSIM_OP_NONE,
-            .hwname = NULL,
+            .c_hwname = NULL,
             .c_channels = 0,
             .c_no_vif = false,
             .c_use_chanctx = false,
             .c_reg_alpha2 = NULL,
             .c_reg_custom_reg = 0,
             .del_radio_id = 0,
-            .del_ref_found = false
+            .del_radio_name = NULL
     };
     ctx.args = args;
     struct argp hwsim_argp = {options, hwsim_parse_argp, 0, doc, 0, 0, 0};
@@ -145,8 +157,10 @@ int main(int argc, char **argv) {
     switch (ctx.args.mode) {
         case HWSIM_OP_CREATE:
             return handleCreate(&ctx.args);
-        case HWSIM_OP_DELETE:
-            return handleDelete(&ctx.args);
+        case HWSIM_OP_DELETE_BY_ID:
+            return handleDeleteById(&ctx.args);
+        case HWSIM_OP_DELETE_BY_NAME:
+            return handleDeleteByName(&ctx.args);
         case HWSIM_OP_NONE:
             argp_err_and_usage("Exactly one of -d or -c is required");
             break;

@@ -12,16 +12,6 @@
 
 static pthread_mutex_t nl_cb_mutex;
 
-static void notify_device_creation(int id) {
-    printf("Created device with ID %d\n", id);
-    exit(EXIT_SUCCESS);
-}
-
-static void notify_device_deletion() {
-    printf("Successfully deleted device\n");
-    exit(EXIT_SUCCESS);
-}
-
 static int nl_msg_cb(struct nl_msg *msg, void *rctx) {
     hwsim_cli_ctx *ctx = rctx;
     struct nlmsghdr *nlh = nlmsg_hdr(msg);
@@ -31,7 +21,7 @@ static int nl_msg_cb(struct nl_msg *msg, void *rctx) {
         if (!pthread_mutex_trylock(&nl_cb_mutex)) {
             if (ctx->args.mode == HWSIM_OP_CREATE) {
                 notify_device_creation(0);
-            } else if (ctx->args.mode == HWSIM_OP_DELETE) {
+            } else if (ctx->args.mode == HWSIM_OP_DELETE_BY_ID || ctx->args.mode == HWSIM_OP_DELETE_BY_NAME) {
                 notify_device_deletion();
             }
             // should not be needed
@@ -45,7 +35,7 @@ static int nl_err_cb(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *rctx
     UNUSED(nla);
     hwsim_cli_ctx *ctx = rctx;
     if (!pthread_mutex_trylock(&nl_cb_mutex)) {
-        if (ctx->args.mode == HWSIM_OP_DELETE) {
+        if (ctx->args.mode == HWSIM_OP_DELETE_BY_ID || ctx->args.mode == HWSIM_OP_DELETE_BY_NAME) {
             if (nlerr->error == -ENODEV) {
                 fprintf(stderr, "Device not found\n");
             } else {
