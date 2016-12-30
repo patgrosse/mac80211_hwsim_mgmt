@@ -91,11 +91,6 @@ int register_event(hwsim_cli_ctx *ctx) {
 int wait_for_event(hwsim_cli_ctx *ctx) {
     struct timespec halfsecond = {0, 500000000};
     nanosleep(&halfsecond, NULL);
-    if (ctx->args.mode == HWSIM_OP_CREATE) {
-        notify_device_creation(0);
-    } else if (ctx->args.mode == HWSIM_OP_DELETE) {
-        notify_device_deletion();
-    }
-    fprintf(stderr, "Unknown error occurred\n");
+    fprintf(stderr, "Did not receive netlink event after 500 msec\n");
     return EXIT_FAILURE;
 }
