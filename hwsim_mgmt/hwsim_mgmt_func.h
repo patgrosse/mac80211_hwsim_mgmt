@@ -1,3 +1,8 @@
+/*
+ * mac80211_hwsim_mgmt - management tool for mac80211_hwsim kernel module
+ * Copyright (c) 2016, Patrick Grosse <patrick.grosse@uni-muenster.de>
+ */
+
 #ifndef MAC80211_HWSIM_MGMT_HWSIM_MGMT_FUNC_H
 #define MAC80211_HWSIM_MGMT_HWSIM_MGMT_FUNC_H
 

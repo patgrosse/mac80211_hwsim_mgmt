@@ -1,3 +1,8 @@
+/*
+ * mac80211_hwsim_mgmt - management tool for mac80211_hwsim kernel module
+ * Copyright (c) 2016, Patrick Grosse <patrick.grosse@uni-muenster.de>
+ */
+
 #include <netlink/netlink.h>
 #include <argp.h>
 #include "hwsim_mgmt_cli.h"
