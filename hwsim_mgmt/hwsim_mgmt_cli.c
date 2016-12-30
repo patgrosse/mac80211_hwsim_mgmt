@@ -5,30 +5,49 @@
 
 #include <netlink/netlink.h>
 #include <argp.h>
+#include <stdarg.h>
 #include "hwsim_mgmt_cli.h"
 #include "hwsim_mgmt_event.h"
 
 const char *argp_program_version = "mac80211_hwsim_mgmt v0.1";
 const char *argp_program_bug_address = "<patrick.grosse@uni-muenster.de>";
-char *program_executable = "hwsim_mgmt";
-const char doc[] = "Management tool for mac80211_hwsim kernel module";
-struct argp_option options[] = {
-        {0,         0,   0,      0, "Modes: [-c|-d|-x]",                         1},
-        {"create",  'c', 0,      0, "Create a new radio",                        1},
-        {"delid",   'd', "ID",   0, "Delete an existing radio by its id",        1},
-        {"delname", 'x', "NAME", 0, "Delete an existing radio by its name",      1},
-        {0,         0,   0,      0, "Create options: [-n]",                      2},
-        {"name",    'n', "NAME", 0, "The requested name (may not be available)", 2},
-        {0,         0,   0,      0, "General:",                                  -1},
-        {0,         0,   0,      0, 0,                                           0}
+static char *program_executable = "hwsim_mgmt";
+static const char doc[] = "Management tool for mac80211_hwsim kernel module";
+static struct argp_option options[] = {
+        {0,           0,   0,      0, "Modes: [-c [OPTION...]|-d|-x]",             1},
+        {"create",    'c', 0,      0, "Create a new radio",                        1},
+        {"delid",     'd', "ID",   0, "Delete an existing radio by its id",        1},
+        {"delname",   'x', "NAME", 0, "Delete an existing radio by its name",      1},
+        {0,           0,   0,      0, "Create options:",                           2},
+        {"name",      'n', "NAME", 0, "The requested name (may not be available)", 2},
+        {"channels",  'o', "NUM",  0, "Number of concurrent channels",             2},
+        {"novif",     'v', 0,      0, "No auto vif (flag)",                        2},
+        {"chanctx",   't', 0,      0, "Use chantx (flag)",                         2},
+        {"alphareg",  'a', "STR",  0, "reg_alpha2 hint",                           2},
+        {"customreg", 'r', "REG",  0, "reg_domain ID int",                         2},
+        {0,           0,   0,      0, "General:",                                  -1},
+        {0,           0,   0,      0, 0,                                           0}
 };
+static const char *msg_duplicate_mode = "Exactly one parameter out of -c, -d, -x is required\n";
 
 static hwsim_cli_ctx ctx;
 
-static void argp_err_and_usage(const char *err_msg) {
-    fprintf(stderr, "%s\n\n", err_msg);
+static void argp_err_and_usage(const char *err_msg, ...) {
+    va_list(args);
+    va_start(args, err_msg);
+    vfprintf(stderr, err_msg, args);
     argp_help(&ctx.hwsim_argp, stdout, ARGP_HELP_STD_USAGE, program_executable);
     exit(EXIT_SUCCESS);
+}
+
+uint32_t cli_get_uint32(const char opt, const char *arg) {
+    char *endptr = NULL;
+    unsigned long ul = strtoul(arg, &endptr, 10);
+    unsigned long parsed_len = endptr - arg;
+    if (strlen(arg) != parsed_len || (ul == ULONG_MAX && errno == ERANGE) || ul > UINT32_MAX) {
+        argp_err_and_usage("-%c requires a positive integer attribute (max 32 bit)\n", opt);
+    }
+    return (uint32_t) ul;
 }
 
 error_t hwsim_parse_argp(int key, char *arg, struct argp_state *state) {
@@ -36,32 +55,41 @@ error_t hwsim_parse_argp(int key, char *arg, struct argp_state *state) {
     switch (key) {
         case 'd':
             if (arguments->mode != HWSIM_OP_NONE) {
-                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
+                argp_err_and_usage(msg_duplicate_mode);
             }
             arguments->mode = HWSIM_OP_DELETE_BY_ID;
-            char *endptr = NULL;
-            unsigned long ul = strtoul(arg, &endptr, 10);
-            unsigned long parsed_len = endptr - arg;
-            if (strlen(arg) != parsed_len || (ul == ULONG_MAX && errno == ERANGE) || ul > UINT32_MAX) {
-                argp_err_and_usage("-x requires a positive integer attribute (max 32 bit)");
-            }
-            arguments->del_radio_id = (uint32_t) ul;
+            arguments->del_radio_id = cli_get_uint32('d', arg);
             break;
         case 'x':
             if (arguments->mode != HWSIM_OP_NONE) {
-                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
+                argp_err_and_usage(msg_duplicate_mode);
             }
             arguments->del_radio_name = arg;
             arguments->mode = HWSIM_OP_DELETE_BY_NAME;
             break;
+        case 'c':
+            if (arguments->mode != HWSIM_OP_NONE) {
+                argp_err_and_usage(msg_duplicate_mode);
+            }
+            arguments->mode = HWSIM_OP_CREATE;
+            break;
         case 'n':
             arguments->c_hwname = arg;
             break;
-        case 'c':
-            if (arguments->mode != HWSIM_OP_NONE) {
-                argp_err_and_usage("Only one parameter out of -c, -d, -x is allowed");
-            }
-            arguments->mode = HWSIM_OP_CREATE;
+        case 'o':
+            arguments->c_channels = cli_get_uint32('o', arg);
+            break;
+        case 'v':
+            arguments->c_no_vif = true;
+            break;
+        case 't':
+            arguments->c_use_chanctx = true;
+            break;
+        case 'a':
+            arguments->c_reg_alpha2 = arg;
+            break;
+        case 'r':
+            arguments->c_reg_custom_reg = cli_get_uint32('r', arg);
             break;
         case 'h':
             argp_help(&ctx.hwsim_argp, stdout, ARGP_HELP_STD_HELP, program_executable);
@@ -162,7 +190,7 @@ int main(int argc, char **argv) {
         case HWSIM_OP_DELETE_BY_NAME:
             return handleDeleteByName(&ctx.args);
         case HWSIM_OP_NONE:
-            argp_err_and_usage("Exactly one of -d or -c is required");
+            argp_err_and_usage(msg_duplicate_mode);
             break;
     }
     return EXIT_FAILURE;

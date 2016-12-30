@@ -40,10 +40,16 @@ static int nl_err_cb(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *rctx
             if (nlerr->error == -ENODEV) {
                 fprintf(stderr, "Device not found\n");
             } else {
-                fprintf(stderr, "Unknown error with id %d\n", nlerr->error);
+                fprintf(stderr, "Unknown error on device deletion with errid %d\nstrerror: %s\n", nlerr->error,
+                        strerror(abs(nlerr->error)));
             }
             exit(EXIT_FAILURE);
         } else if (ctx->args.mode == HWSIM_OP_CREATE) {
+            if (nlerr->error < 0) {
+                fprintf(stderr, "Unknown error on device creation with errid %d\nstrerror: %s\n", nlerr->error,
+                        strerror(abs(nlerr->error)));
+                exit(EXIT_FAILURE);
+            }
             notify_device_creation(nlerr->error);
         }
         // should not be needed
