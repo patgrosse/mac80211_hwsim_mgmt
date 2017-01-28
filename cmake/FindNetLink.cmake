@@ -48,20 +48,12 @@ ELSE (NL_LIBRARIES AND NL_INCLUDE_DIRS)
                 PATHS
                 $(SEARCHPATHS)
                 )
-        FIND_LIBRARY(NLROUTE_LIBRARY
-                NAMES
-                nl-route-3 nl-route
-                PATH_SUFFIXES
-                lib64 lib
-                PATHS
-                $(SEARCHPATHS)
-                )
         #
         # If we don't have all of those libraries, we can't use libnl.
         #
-        IF (NOT NLGENL_LIBRARY AND NOT NLROUTE_LIBRARY)
+        IF (NOT NLGENL_LIBRARY)
             SET(NL_LIBRARY NOTFOUND)
-        ENDIF (NOT NLGENL_LIBRARY AND NOT NLROUTE_LIBRARY)
+        ENDIF (NOT NLGENL_LIBRARY)
         IF (NL_LIBRARY)
             STRING(REGEX REPLACE ".*nl-([^.,;]*).*" "\\1" NLSUFFIX ${NL_LIBRARY})
             IF (NLSUFFIX)
@@ -100,7 +92,7 @@ INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(NL DEFAULT_MSG NL_LIBRARY NL_INCLUDE_DIR)
 
 IF (NL_FOUND)
-    SET(NL_LIBRARIES ${NLGENL_LIBRARY} ${NLROUTE_LIBRARY} ${NL_LIBRARY})
+    SET(NL_LIBRARIES ${NLGENL_LIBRARY} ${NL_LIBRARY})
     SET(NL_INCLUDE_DIRS ${NL_INCLUDE_DIR})
 ELSE ()
     SET(NL_LIBRARIES)
