@@ -58,7 +58,7 @@ static int nl_err_cb(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *rctx
             if (nlerr->error == -ENODEV) {
                 fprintf(stderr, "Device not found\n");
             } else {
-            	fprintf(stderr, "Unknown error on device creation with errid %d\nstrerror: %s\n", nlerr->error,
+            	fprintf(stderr, "Unknown error while setting RSSI with errid %d\nstrerror: %s\n", nlerr->error,
                         strerror(abs(nlerr->error)));
             }
             exit(EXIT_FAILURE);
@@ -77,14 +77,15 @@ static void nl_event_handler(int fd, short what, void *rctx) {
 }
 
 static void *run_nl_event_dispatcher(void *rctx) {
-    hwsim_cli_ctx *ctx = rctx;
-    event_init();
-    struct event ev_cmd;
-    event_set(&ev_cmd, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
-              nl_event_handler, ctx);
-    event_add(&ev_cmd, NULL);
-    event_dispatch();
-    return NULL;
+	hwsim_cli_ctx *ctx = rctx;
+	struct event_base *ev_base = event_base_new();
+	struct event *ev_cmd = event_new(ev_base, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
+			  nl_event_handler, ctx);
+	event_add(ev_cmd, NULL);
+	event_base_dispatch(ev_base);
+	event_base_free(ev_base);
+	event_free(ev_cmd);
+	return NULL;
 }
 
 int register_event(hwsim_cli_ctx *ctx) {
