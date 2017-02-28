@@ -67,12 +67,13 @@ static void nl_event_handler(int fd, short what, void *rctx) {
 
 static void *run_nl_event_dispatcher(void *rctx) {
     hwsim_cli_ctx *ctx = rctx;
-    event_init();
-    struct event ev_cmd;
-    event_set(&ev_cmd, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
+    struct event_base *ev_base = event_base_new();
+    struct event *ev_cmd = event_new(ev_base, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
               nl_event_handler, ctx);
-    event_add(&ev_cmd, NULL);
-    event_dispatch();
+    event_add(ev_cmd, NULL);
+    event_base_dispatch(ev_base);
+    event_base_free(ev_base);
+    event_free(ev_cmd);
     return NULL;
 }
 
