@@ -25,7 +25,7 @@ static int nl_msg_cb(struct nl_msg *msg, void *rctx) {
             } else if (ctx->args.mode == HWSIM_OP_DELETE_BY_ID || ctx->args.mode == HWSIM_OP_DELETE_BY_NAME) {
                 notify_device_deletion();
             } else if (ctx->args.mode == HWSIM_OP_SET_RSSI) {
-            	notify_device_setRSSI();
+                notify_device_setRSSI();
             }
             // should not be needed
             pthread_mutex_unlock(&nl_cb_mutex);
@@ -53,16 +53,15 @@ static int nl_err_cb(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *rctx
                 exit(EXIT_FAILURE);
             }
             notify_device_creation(nlerr->error);
-        }
-        else if (ctx->args.mode == HWSIM_OP_SET_RSSI) {
+        } else if (ctx->args.mode == HWSIM_OP_SET_RSSI) {
             if (nlerr->error == -ENODEV) {
                 fprintf(stderr, "Device not found\n");
             } else {
-            	fprintf(stderr, "Unknown error while setting RSSI with errid %d\nstrerror: %s\n", nlerr->error,
+                fprintf(stderr, "Unknown error while setting RSSI with errid %d\nstrerror: %s\n", nlerr->error,
                         strerror(abs(nlerr->error)));
             }
             exit(EXIT_FAILURE);
-	}
+        }
         // should not be needed
         pthread_mutex_unlock(&nl_cb_mutex);
     }
@@ -77,15 +76,15 @@ static void nl_event_handler(int fd, short what, void *rctx) {
 }
 
 static void *run_nl_event_dispatcher(void *rctx) {
-	hwsim_cli_ctx *ctx = rctx;
-	struct event_base *ev_base = event_base_new();
-	struct event *ev_cmd = event_new(ev_base, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
-			  nl_event_handler, ctx);
-	event_add(ev_cmd, NULL);
-	event_base_dispatch(ev_base);
-	event_base_free(ev_base);
-	event_free(ev_cmd);
-	return NULL;
+    hwsim_cli_ctx *ctx = rctx;
+    struct event_base *ev_base = event_base_new();
+    struct event *ev_cmd = event_new(ev_base, nl_socket_get_fd(ctx->nl_ctx.sock), EV_READ | EV_PERSIST,
+                                     nl_event_handler, ctx);
+    event_add(ev_cmd, NULL);
+    event_base_dispatch(ev_base);
+    event_base_free(ev_base);
+    event_free(ev_cmd);
+    return NULL;
 }
 
 int register_event(hwsim_cli_ctx *ctx) {

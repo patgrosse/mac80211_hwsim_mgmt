@@ -15,7 +15,7 @@ enum op_mode {
     HWSIM_OP_CREATE,
     HWSIM_OP_DELETE_BY_ID,
     HWSIM_OP_DELETE_BY_NAME,
-	HWSIM_OP_SET_RSSI
+    HWSIM_OP_SET_RSSI
 };
 
 typedef struct {

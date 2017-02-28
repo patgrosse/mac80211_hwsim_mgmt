@@ -18,7 +18,7 @@ static struct argp_option options[] = {
         {"create",    'c', 0,      0, "Create a new radio",                        1},
         {"delid",     'd', "ID",   0, "Delete an existing radio by its id",        1},
         {"delname",   'x', "NAME", 0, "Delete an existing radio by its name",      1},
-        {"setrssi",  'k', "NUM",  0, "Set RSSI to specific radio",      1},
+        {"setrssi",   'k', "NUM",  0, "Set RSSI to specific radio",                1},
         {0,           0,   0,      0, "Create options:",                           2},
         {"name",      'n', "NAME", 0, "The requested name (may not be available)", 2},
         {"channels",  'o', "NUM",  0, "Number of concurrent channels",             2},
