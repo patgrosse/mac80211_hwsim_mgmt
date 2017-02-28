@@ -14,7 +14,8 @@ enum op_mode {
     HWSIM_OP_NONE,
     HWSIM_OP_CREATE,
     HWSIM_OP_DELETE_BY_ID,
-    HWSIM_OP_DELETE_BY_NAME
+    HWSIM_OP_DELETE_BY_NAME,
+	HWSIM_OP_SET_RSSI
 };
 
 typedef struct {
@@ -27,6 +28,7 @@ typedef struct {
     uint32_t c_reg_custom_reg;
     uint32_t del_radio_id;
     char *del_radio_name;
+    uint32_t rssi_radio;
 } hwsim_args;
 
 typedef struct {
@@ -41,8 +43,12 @@ int handleDeleteById(const hwsim_args *args);
 
 int handleDeleteByName(const hwsim_args *args);
 
+int handleSetRSSI(const hwsim_args *args, char *rssi);
+
 void notify_device_creation(int id);
 
 void notify_device_deletion();
+
+void notify_device_setRSSI();
 
 #endif //MAC80211_HWSIM_MGMT_HWSIM_MGMT_H
