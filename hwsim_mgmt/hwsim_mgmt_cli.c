@@ -18,6 +18,7 @@ static struct argp_option options[] = {
         {"create",    'c', 0,      0, "Create a new radio",                        1},
         {"delid",     'd', "ID",   0, "Delete an existing radio by its id",        1},
         {"delname",   'x', "NAME", 0, "Delete an existing radio by its name",      1},
+        {"setrssi",  'k', "NUM",  0, "Set RSSI to specific radio",      1},
         {0,           0,   0,      0, "Create options:",                           2},
         {"name",      'n', "NAME", 0, "The requested name (may not be available)", 2},
         {"channels",  'o', "NUM",  0, "Number of concurrent channels",             2},
@@ -66,6 +67,13 @@ error_t hwsim_parse_argp(int key, char *arg, struct argp_state *state) {
             }
             arguments->del_radio_name = arg;
             arguments->mode = HWSIM_OP_DELETE_BY_NAME;
+            break;
+        case 'k':
+            if (arguments->mode != HWSIM_OP_NONE) {
+                argp_err_and_usage(msg_duplicate_mode);
+            }
+            arguments->rssi_radio = cli_get_uint32('d', arg);
+            arguments->mode = HWSIM_OP_SET_RSSI;
             break;
         case 'c':
             if (arguments->mode != HWSIM_OP_NONE) {
@@ -151,6 +159,18 @@ int handleDeleteByName(const hwsim_args *args) {
     return wait_for_event();
 }
 
+int handleSetRSSI(const hwsim_args *args, char *rssi) {
+    int ret;
+    if ((ret = prepareCommand())) {
+        return ret;
+    };
+
+    if ((ret = set_rssi(&ctx.nl_ctx, args->rssi_radio, cli_get_uint32('d', rssi)))) {
+        return ret;
+    }
+    return wait_for_event();
+}
+
 void notify_device_creation(int id) {
     printf("Created device with ID %d\n", id);
     exit(EXIT_SUCCESS);
@@ -165,6 +185,13 @@ void notify_device_deletion() {
     exit(EXIT_SUCCESS);
 }
 
+void notify_device_setRSSI() {
+    if (ctx.args.mode == HWSIM_OP_SET_RSSI) {
+        printf("new SSID defined to interface %d\n", ctx.args.rssi_radio);
+    }
+    exit(EXIT_SUCCESS);
+}
+
 int main(int argc, char **argv) {
     hwsim_args args = {
             .mode = HWSIM_OP_NONE,
@@ -175,8 +202,10 @@ int main(int argc, char **argv) {
             .c_reg_alpha2 = NULL,
             .c_reg_custom_reg = 0,
             .del_radio_id = 0,
-            .del_radio_name = NULL
+            .del_radio_name = NULL,
+            .rssi_radio = 0
     };
+
     ctx.args = args;
     struct argp hwsim_argp = {options, hwsim_parse_argp, 0, doc, 0, 0, 0};
     ctx.hwsim_argp = hwsim_argp;
@@ -189,6 +218,8 @@ int main(int argc, char **argv) {
             return handleDeleteById(&ctx.args);
         case HWSIM_OP_DELETE_BY_NAME:
             return handleDeleteByName(&ctx.args);
+        case HWSIM_OP_SET_RSSI:
+            return handleSetRSSI(&ctx.args, argv[3]);
         case HWSIM_OP_NONE:
             argp_err_and_usage(msg_duplicate_mode);
             break;

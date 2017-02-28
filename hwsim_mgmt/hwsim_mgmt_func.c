@@ -52,6 +52,7 @@ int create_radio(const netlink_ctx *ctx, const uint32_t channels, const bool no_
                  const uint32_t reg_custom_reg) {
     struct nl_msg *msg;
     msg = nlmsg_alloc();
+
     if (!msg) {
         fprintf(stderr, "Error allocating new message!\n");
         return EXIT_FAILURE;
@@ -138,4 +139,30 @@ int delete_radio_by_name(const netlink_ctx *ctx, const char *radio_name) {
     }
     return EXIT_SUCCESS;
 
+}
+
+int set_rssi(const netlink_ctx *ctx, const uint32_t radio_id, const uint32_t rssi) {
+    struct nl_msg *msg;
+
+    msg = nlmsg_alloc();
+    if (!msg) {
+        fprintf(stderr, "Error allocating new message!\n");
+        return EXIT_FAILURE;
+    }
+    if (genlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ,
+                    genl_family_get_id(ctx->family), 0,
+                    NLM_F_REQUEST, HWSIM_CMD_GET_RADIO,
+                    1) == NULL) {
+        fprintf(stderr, "Error in genlmsg_put!\n");
+        nlmsg_free(msg);
+        return EXIT_FAILURE;
+    }
+    nla_put_u32(msg, HWSIM_ATTR_SIGNAL, rssi*-1);
+    nla_put_u32(msg, HWSIM_ATTR_RADIO_ID, radio_id);
+    if (nl_send_auto(ctx->sock, msg) < 0) {
+        fprintf(stderr, "Error sending message!\n");
+        nlmsg_free(msg);
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }

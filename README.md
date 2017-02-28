@@ -17,6 +17,9 @@ cd mac80211_hwsim_mgmt
 make install
 ```
 
+### About Set RSSI   
+The feature Set RSSI requires minor changes in mac80211_hwsim: https://www.youtube.com/watch?v=gtaHCpaHBGc
+
 ### Requirements
 * A kernel containing the mac80211_hwsim module
 * libevent and at least libnl-2.0
@@ -29,6 +32,7 @@ hwsim_mgmt [OPTION...]
   -c, --create               Create a new radio
   -d, --delid=ID             Delete an existing radio by its id
   -x, --delname=NAME         Delete an existing radio by its name
+  -k, --setrssi=NUM          Set RSSI to specific radio 
 
  Create options:
   -a, --alphareg=STR         reg_alpha2 hint

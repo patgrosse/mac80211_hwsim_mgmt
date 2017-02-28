@@ -57,4 +57,6 @@ int delete_radio_by_id(const netlink_ctx *ctx, const uint32_t radio_id);
 
 int delete_radio_by_name(const netlink_ctx *ctx, const char *radio_name);
 
+int set_rssi(const netlink_ctx *ctx, const uint32_t radio_id, const uint32_t rssi);
+
 #endif //MAC80211_HWSIM_MGMT_HWSIM_MGMT_FUNC_H
