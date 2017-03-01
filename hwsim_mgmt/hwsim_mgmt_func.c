@@ -157,7 +157,7 @@ int set_rssi(const netlink_ctx *ctx, const uint32_t radio_id, const uint32_t rss
         nlmsg_free(msg);
         return EXIT_FAILURE;
     }
-    nla_put_u32(msg, HWSIM_ATTR_SIGNAL, rssi*-1);
+    nla_put_u32(msg, HWSIM_ATTR_SIGNAL, rssi * -1);
     nla_put_u32(msg, HWSIM_ATTR_RADIO_ID, radio_id);
     if (nl_send_auto(ctx->sock, msg) < 0) {
         fprintf(stderr, "Error sending message!\n");
